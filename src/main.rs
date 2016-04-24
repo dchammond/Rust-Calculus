@@ -1,6 +1,10 @@
 use std::io;
 use std::io::Write;
 
+fn strip_white_space(input: &String) -> String {
+	input.split_whitespace().collect::<Vec<&str>>().join("")
+}
+
 fn main() {
     println!("Welcome to Rust-Calculus!");
     println!("To evaluate an expression, simply type one in and hit RETURN.");
@@ -16,9 +20,10 @@ fn main() {
     	stdout.flush().ok();
         stdin.read_line(&mut input).unwrap();
         println!("You typed: {}", input.trim());
-        match input.trim().to_lowercase().as_ref() {
+        input = strip_white_space(&input);
+        match input.to_lowercase().as_ref() {
             "quit" => {print!("Exiting..."); break;},
-            _ => continue,
+            _ => {println!("You typed: {}", input.trim());},
         }
     }
 }
