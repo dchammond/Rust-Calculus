@@ -1,0 +1,6 @@
+[package]
+name = "Rust-Calculus"
+version = "0.1.0"
+authors = ["dchammond <dillonhammond@gmail.com>"]
+
+[dependencies]
