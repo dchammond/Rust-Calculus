@@ -6,14 +6,19 @@ fn main() {
     println!("To evaluate an expression, simply type one in and hit RETURN.");
     println!("To set a variable, simply type VAR_NAME=EXPRESSION and hit RETURN.");
     println!("Valid commands are: sym_int, int, sym_def, and def.");
+    println!("Type 'quit' to exit.");
     let mut input = String::new();
     let stdin = io::stdin();
     let mut stdout = io::stdout();
     loop {
+    	input.clear();
     	print!(">>>> ");
     	stdout.flush().ok();
         stdin.read_line(&mut input).unwrap();
         println!("You typed: {}", input.trim());
-        input.clear();
+        match input.trim().to_lowercase().as_ref() {
+            "quit" => {print!("Exiting..."); break;},
+            _ => continue,
+        }
     }
 }
