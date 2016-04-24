@@ -1,10 +1,6 @@
 use std::io;
 use std::io::Write;
 
-fn strip_white_space(input: &String) -> String {
-	input.split_whitespace().collect::<Vec<&str>>().join("")
-}
-
 fn main() {
     println!("Welcome to Rust-Calculus!");
     println!("To evaluate an expression, simply type one in and hit RETURN.");
@@ -26,4 +22,8 @@ fn main() {
             _ => {println!("You typed: {}", input.trim());},
         }
     }
+}
+
+fn strip_white_space(input: &String) -> String {
+	input.split_whitespace().collect::<Vec<&str>>().join("")
 }
