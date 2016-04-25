@@ -5,9 +5,9 @@ use std::io::Write;
 enum Token<'a> {
     Unknown(&'a str), // Invalid test (basically non-ascii)
     Literal(&'a str), // Numeric literal number
-    Function(Function<'a>), // Pre-defined function (like cos() or a user defined f(x)=... )
+    Function(Function<'a>), // Pre-defined function (like cos() )
     Constant(Constant), // Constant like pi or e
-    Variable(&'a str), // str re3presenting an arbitary varible name (no space)
+    Variable(&'a str), // str arbitrary single char variable name
     Operator(Operator), // Any of the 4 operators (+-*/)
     Open(Vec<Token<'a>>), // Open parens '(' followed by vector of tokens and a Token::Close
     Close, // Closing parens ')'
@@ -62,6 +62,26 @@ enum Order {
     Paren = 5,
 }
 
+#[derive(Debug, PartialEq, Clone)]
+struct Expression<'a> {
+    tokens: Vec<Token<'a>>,
+    constant: f64,
+}
+
+impl<'a> Expression<'a> {
+	fn new(tokens: Vec<Token<'a>>, constant: f64) -> Self {
+		Expression {tokens: tokens, constant: constant}
+	}
+
+	fn push(&mut self, token: Token<'a>) {
+		self.tokens.push(token);
+	}
+
+	fn update_constant(&mut self, constant: &f64) {
+		self.constant += *constant;
+	}
+}
+
 fn main() {
     println!("Welcome to Rust-Calculus!");
     println!("To evaluate an expression, simply type one in and hit RETURN.");
@@ -76,15 +96,20 @@ fn main() {
     	print!(">>>> ");
     	stdout.flush().ok();
         stdin.read_line(&mut input).unwrap();
-        println!("You typed: {}", input.trim());
         input = strip_white_space(&input);
-        match input.to_lowercase().as_ref() {
-            "quit" => {print!("Exiting..."); break;},
-            _ => {println!("You typed: {}", input.trim());},
+        input = input.to_lowercase();
+        if input == "quit" {
+        	print!("Exiting...");
+        	break;
         }
+        let mut expr = parse_input(&input).unwrap();
     }
 }
 
 fn strip_white_space(input: &String) -> String {
 	input.split_whitespace().collect::<Vec<&str>>().join("")
+}
+
+fn parse_input(input: &String) -> Result<Expression, ()> {
+	unimplemented!()
 }
