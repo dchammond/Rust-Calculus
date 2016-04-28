@@ -107,23 +107,18 @@ impl Expression {
 	}
 
 	fn find_first(&self, token: &Token) -> Option<usize> {
-		let mut index: usize = 0;
-		for t in &self.tokens {
-			if t == token {
-				return Some(index);
+		for i in 0..self.tokens.len() {
+			if self.tokens.get(i).unwrap() == token {
+				return Some(i);
 			}
-			index += 1;
 		}
 		None
 	}
 
 	fn find_last(&self, token: &Token) -> Option<usize> {
-		let mut index: usize = 0;
-		let mut found = false;
 		for i in (0..self.tokens.len()).rev() {
 			if self.tokens.get(i).unwrap() == token {
-				index = i;
-				return Some(index);
+				return Some(i);
 			}
 		}
 		None
