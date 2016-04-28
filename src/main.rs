@@ -2,7 +2,7 @@ use std::io;
 use std::io::Write;
 
 #[derive(Debug, PartialEq, Clone)]
-enum Token {
+pub enum Token {
     Unknown(String), // Invalid test (basically non-ascii)
     Literal(String), // Numeric literal number
     Func(Function), // Pre-defined function (like cos() )
@@ -15,7 +15,7 @@ enum Token {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-enum Function {
+pub enum Function {
     Sqrt(Vec<Token>),
     Ln(Vec<Token>),
     Log(f64, Vec<Token>),
@@ -34,13 +34,13 @@ enum Function {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum Constant {
+pub enum Constant {
 	Pi,
 	E,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum Operator {
+pub enum Operator {
     Add,
     Sub,
     Div,
@@ -50,14 +50,14 @@ enum Operator {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u32)]
-enum Assoc {
+pub enum Assoc {
     Left,
     Right,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u32)]
-enum Order {
+pub enum Order {
     AddSub = 1,
     MulDiv = 2,
     IMul = 3, // Implicit multiplication
@@ -71,6 +71,7 @@ struct Expression {
     constant: f64,
 }
 
+#[allow(dead_code)]
 impl Expression {
 	fn new(tokens: Vec<Token>, constant: f64) -> Self {
 		Expression {tokens: tokens, constant: constant}
@@ -162,7 +163,7 @@ fn main() {
         	print!("Exiting...");
         	break;
         }
-        let mut expr = parse_input(&input).unwrap();
+        let expr = parse_input(&input).unwrap();
         println!("{:?}", &expr);
     }
 }
@@ -202,14 +203,13 @@ fn parse_input(input: &String) -> Result<Expression, ()> {
 	while let Some(index) = expr.find_first(&Token::Open) { // If we find an index of an Open
 		let end_set: usize = expr.find_last(&Token::Close).unwrap();
 		let mut lhs: Vec<Token> = Vec::new();
-		let mut rhs: Vec<Token> = Vec::new();
 		{
 			let (temp_lhs, temp_rhs) = expr.split_at(index); // [0, where set should be placed)
 			lhs = temp_lhs.to_vec();
-			rhs = temp_rhs.to_vec(); // [where set should be placed, len)
+			let mut rhs = temp_rhs.to_vec(); // [where set should be placed, len)
 			rhs.remove(0);
-			let (mut left_rhs, mut right_rhs) = rhs.split_at(end_set-2);
-			let (mut left_rhs, mut right_rhs) = (left_rhs.to_vec(), right_rhs.to_vec());
+			let (left_rhs, right_rhs) = rhs.split_at(end_set-1);
+			let (left_rhs, mut right_rhs) = (left_rhs.to_vec(), right_rhs.to_vec());
 			right_rhs.remove(0);
 			lhs.push(Token::Set(left_rhs));
 			lhs.append(&mut right_rhs);
@@ -223,4 +223,30 @@ fn parse_input(input: &String) -> Result<Expression, ()> {
 		expr.replace_all_tokens(lhs);
 	}
 	Ok(expr)
+}
+
+#[test]
+fn test_parse() {
+	let input: String = String::from("+");
+	assert_eq!(Expression::new(vec![Token::Op(Operator::Add)], 0.0), parse_input(&input).unwrap());
+	let input: String = String::from("-");
+	assert_eq!(Expression::new(vec![Token::Op(Operator::Sub)], 0.0), parse_input(&input).unwrap());
+	let input: String = String::from("/");
+	assert_eq!(Expression::new(vec![Token::Op(Operator::Div)], 0.0), parse_input(&input).unwrap());
+	let input: String = String::from("*");
+	assert_eq!(Expression::new(vec![Token::Op(Operator::Mul)], 0.0), parse_input(&input).unwrap());
+	let input: String = String::from("^");
+	assert_eq!(Expression::new(vec![Token::Op(Operator::Pow)], 0.0), parse_input(&input).unwrap());
+	let input: String = String::from("()");
+	assert_eq!(Expression::new(vec![Token::Set(Vec::new())], 0.0), parse_input(&input).unwrap());
+	let input: String = String::from("(+)");
+	assert_eq!(Expression::new(vec![Token::Set(vec![Token::Op(Operator::Add)])], 0.0), parse_input(&input).unwrap());
+	let input: String = String::from("(-)");
+	assert_eq!(Expression::new(vec![Token::Set(vec![Token::Op(Operator::Sub)])], 0.0), parse_input(&input).unwrap());
+	let input: String = String::from("(*)");
+	assert_eq!(Expression::new(vec![Token::Set(vec![Token::Op(Operator::Mul)])], 0.0), parse_input(&input).unwrap());
+	let input: String = String::from("(/)");
+	assert_eq!(Expression::new(vec![Token::Set(vec![Token::Op(Operator::Div)])], 0.0), parse_input(&input).unwrap());
+	let input: String = String::from("(^)");
+	assert_eq!(Expression::new(vec![Token::Set(vec![Token::Op(Operator::Pow)])], 0.0), parse_input(&input).unwrap());
 }
