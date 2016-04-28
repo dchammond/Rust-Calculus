@@ -12,7 +12,6 @@ enum Token {
     Open, // Open parens '(' 
     Close, // Closing parens ')'
     Set(Vec<Token>), // [ (, tokens..., ) ]
-    Fake,
 }
 
 #[derive(Debug, PartialEq, Clone)]
