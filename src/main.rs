@@ -169,7 +169,6 @@ fn strip_white_space(input: &String) -> String {
 
 fn parse_input(input: &String) -> Result<Expression, ()> {
 	let mut expr: Expression = Expression::new(Vec::new(), 0.0);
-	let mut builder: Vec<Token> = Vec::new();
 	for c in input.chars() {
 		match c {
 			'-' => {
