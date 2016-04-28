@@ -97,13 +97,13 @@ impl Expression {
 		self.tokens.as_mut_slice()
 	}
 
-	fn replace_token(&mut self, index: usize, newToken: Token) {
+	fn replace_token(&mut self, index: usize, new_token: Token) {
 		self.tokens.remove(index);
-		self.tokens.insert(index, newToken);
+		self.tokens.insert(index, new_token);
 	}
 
-	fn replace_all_tokens(&mut self, newTokens: Vec<Token>) {
-		self.tokens = newTokens
+	fn replace_all_tokens(&mut self, new_token: Vec<Token>) {
+		self.tokens = new_token
 	}
 
 	fn find_first(&self, token: &Token) -> Option<usize> {
@@ -191,7 +191,7 @@ fn parse_input(input: &String) -> Result<Expression, ()> {
 		}
 	}
 	if let Some(index) = expr.find_first(&Token::Open) { // If we find an index of an Open
-		let endSet: usize = expr.find_last(&Token::Close).unwrap();
+		let end_set: usize = expr.find_last(&Token::Close).unwrap();
 		let mut lhs: Vec<Token> = Vec::new();
 		let mut rhs: Vec<Token> = Vec::new();
 		{
@@ -199,13 +199,9 @@ fn parse_input(input: &String) -> Result<Expression, ()> {
 			lhs = temp_lhs.to_vec();
 			rhs = temp_rhs.to_vec(); // [where set should be placed, len)
 			rhs.remove(0);
-			// split rhs at endset - 2
-			// Left part gets pushed as a Set to lhs
-			// Remove index 0 of right part (this is the close we split on) and add that as a vector to lhs
-			let (mut left_rhs, mut right_rhs) = rhs.split_at(endSet-2);
+			let (mut left_rhs, mut right_rhs) = rhs.split_at(end_set-2);
 			let (mut left_rhs, mut right_rhs) = (left_rhs.to_vec(), right_rhs.to_vec());
 			right_rhs.remove(0);
-			//rhs.remove(endSet-2); // Sub one because we removed the first element, need to split at endSet -2 
 			lhs.push(Token::Set(left_rhs));
 			lhs.append(&mut right_rhs);
 		}
