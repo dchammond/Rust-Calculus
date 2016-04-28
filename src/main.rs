@@ -114,6 +114,16 @@ impl Expression {
 		None
 	}
 
+	fn find_first_recursive(&self, token: &Token) -> Option<usize> {
+		unimplemented!();
+		for i in 0..self.tokens.len() {
+			if self.tokens.get(i).unwrap() == token {
+				return Some(i);
+			}
+		}
+		None
+	}
+
 	fn find_last(&self, token: &Token) -> Option<usize> {
 		for i in (0..self.tokens.len()).rev() {
 			if self.tokens.get(i).unwrap() == token {
@@ -189,7 +199,7 @@ fn parse_input(input: &String) -> Result<Expression, ()> {
 			_ => continue,
 		}
 	}
-	if let Some(index) = expr.find_first(&Token::Open) { // If we find an index of an Open
+	while let Some(index) = expr.find_first(&Token::Open) { // If we find an index of an Open
 		let end_set: usize = expr.find_last(&Token::Close).unwrap();
 		let mut lhs: Vec<Token> = Vec::new();
 		let mut rhs: Vec<Token> = Vec::new();
