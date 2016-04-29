@@ -200,8 +200,10 @@ fn parse_input(input: &String) -> Result<Expression, ()> {
 			_ => continue,
 		}
 	}
+	// Once we find an outermost (), split the rest of the expression after that off into a new vector
+	//let mut expr_vecs: Vec<Vec<Token>> = Vec::new();
 	while let Some(index) = expr.find_first(&Token::Open) { // If we find an index of an Open
-		let end_set: usize = expr.find_last(&Token::Close).unwrap();
+		let end_set: usize = expr.find_last(&Token::Close).unwrap(); // Finds the last Close, need to find the one that actually matches the proper Open (if two Sets are on same depth)
 		let mut lhs: Vec<Token> = Vec::new();
 		{
 			let (temp_lhs, temp_rhs) = expr.split_at(index); // [0, where set should be placed)
@@ -249,4 +251,6 @@ fn test_parse() {
 	assert_eq!(Expression::new(vec![Token::Set(vec![Token::Op(Operator::Div)])], 0.0), parse_input(&input).unwrap());
 	let input: String = String::from("(^)");
 	assert_eq!(Expression::new(vec![Token::Set(vec![Token::Op(Operator::Pow)])], 0.0), parse_input(&input).unwrap());
+	let input: String = String::from("(())");
+	assert_eq!(Expression::new(vec![Token::Set(vec![Token::Set(Vec::new())])], 0.0), parse_input(&input).unwrap());
 }
