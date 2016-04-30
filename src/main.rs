@@ -71,6 +71,20 @@ struct Expression {
     constant: f64,
 }
 
+struct ExpressionIter<'a> {
+	expr: &'a Expression,
+	count: usize,
+}
+
+impl<'a> Iterator for ExpressionIter<'a> {
+	type Item = &'a Token;
+    fn next(&mut self) -> Option<&'a Token> {
+    	let token = self.expr.get_tokens().get(self.count);
+    	self.count += 1;
+    	token
+    }
+}
+
 #[allow(dead_code)]
 impl Expression {
 	fn new(tokens: Vec<Token>, constant: f64) -> Self {
@@ -130,6 +144,10 @@ impl Expression {
 
 	fn len(&self) -> usize {
 		self.tokens.len()
+	}
+
+	fn iter(&self) -> ExpressionIter {
+		ExpressionIter {expr: &self, count: 0}
 	}
 }
 
