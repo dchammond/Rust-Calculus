@@ -115,16 +115,6 @@ impl Expression {
 		None
 	}
 
-	fn find_first_recursive(&self, token: &Token) -> Option<usize> {
-		unimplemented!();
-		for i in 0..self.tokens.len() {
-			if self.tokens.get(i).unwrap() == token {
-				return Some(i);
-			}
-		}
-		None
-	}
-
 	fn find_last(&self, token: &Token) -> Option<usize> {
 		for i in (0..self.tokens.len()).rev() {
 			if self.tokens.get(i).unwrap() == token {
