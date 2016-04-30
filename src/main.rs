@@ -164,14 +164,21 @@ fn main() {
     	input.clear();
     	print!(">>>> ");
     	stdout.flush().ok();
-        stdin.read_line(&mut input).unwrap();
+        if let Err(x) = stdin.read_line(&mut input) {
+        	println!("There was a problem reading stdin: {:?}", x);
+        	print!("Exiting...");;
+        	break;
+        }
         input = strip_white_space(&input);
         input = input.to_lowercase();
         if input == "quit" {
         	print!("Exiting...");
         	break;
         }
-        let expr = parse_input(&input).unwrap();
+        let expr = match parse_input(&input) {
+        		Ok(x) => x,
+        		Err(x) => {println!("Encountered an error while parsing: {:?}", x); print!("Exiting..."); break;},
+        	};
         println!("{:?}", &expr);
     }
 }
@@ -180,7 +187,7 @@ fn strip_white_space(input: &String) -> String {
 	input.split_whitespace().collect::<Vec<&str>>().join("")
 }
 
-fn parse_input(input: &String) -> Result<Expression, ()> {
+fn parse_input(input: &String) -> Result<Expression, String> {
 	let mut expr: Expression = Expression::new(Vec::new(), 0.0);
 	for c in input.chars() {
 		match c {
