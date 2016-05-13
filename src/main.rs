@@ -169,8 +169,7 @@ fn main() {
         	print!("Exiting...");;
         	break;
         }
-        input = strip_white_space(&input);
-        input = input.to_lowercase();
+        input = strip_white_space(&input).to_lowercase();
         if input == "quit" {
         	print!("Exiting...");
         	break;
