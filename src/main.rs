@@ -9,8 +9,8 @@ pub enum Token {
     Const(Constant), // Constant like pi or e
     Var(String), // str arbitrary single char variable name
     Op(Operator), // Any of the 4 operators (+-*/)
-    Open, // Open parens '(' 
-    Close, // Closing parens ')'
+    Open(u8), // Open parens '(' 
+    Close(u8), // Closing parens ')'
     Set(Vec<Token>), // [ (, tokens..., ) ]
 }
 
@@ -122,6 +122,9 @@ impl Expression {
 
 	fn find_first(&self, token: &Token) -> Option<usize> {
 		for i in 0..self.tokens.len() {
+			//if self.tokens.get(i).unwrap() == Token::Set {
+				println!("HERE {:?}", self.tokens.get(i).unwrap().0);
+			//}
 			if self.tokens.get(i).unwrap() == token {
 				return Some(i);
 			}
@@ -188,6 +191,9 @@ fn strip_white_space(input: &String) -> String {
 
 fn parse_input(input: &String) -> Result<Expression, String> {
 	let mut expr: Expression = Expression::new(Vec::new(), 0.0);
+	let mut depth: u8 = 0;
+	let mut lastParens = ' ';
+	let mut maxDepth: u8 = 0;
 	for c in input.chars() {
 		match c {
 			'-' => {
@@ -206,37 +212,57 @@ fn parse_input(input: &String) -> Result<Expression, String> {
 				expr.push(Token::Op(Operator::Pow));
 			},
 			'(' => {
-				expr.push(Token::Open);
+				if lastParens == '(' {
+					depth += 1;
+					if maxDepth < depth {maxDepth = depth}
+				}
+				expr.push(Token::Open(depth));
+				lastParens = '(';
 			},
 			')' => {
-				expr.push(Token::Close);
+				if lastParens == ')' {
+					depth -= 1;
+				}
+				expr.push(Token::Close(depth));
+				lastParens = ')';
+
 			},
 			_ => continue,
 		}
 	}
-	// Once we find an outermost (), split the rest of the expression after that off into a new vector
-	//let mut expr_vecs: Vec<Vec<Token>> = Vec::new();
-	while let Some(index) = expr.find_first(&Token::Open) { // If we find an index of an Open
-		let end_set: usize = expr.find_last(&Token::Close).unwrap(); // Finds the last Close, need to find the one that actually matches the proper Open (if two Sets are on same depth)
+	assert!(depth == 0); // Depth should always end at 0
+	println!("ORIG EXPR {:?}", &expr);
+	loop {
+		let mut index: Option<usize> = None;
+		depth = 0;
+		while depth <= maxDepth {
+			if let Some(x) = expr.find_first(&Token::Open(depth)) {
+				index = Some(x);
+				break;
+			}
+			depth += 1;
+		}
+		if index == None {break;}
+		let index = index.unwrap(); // If we reach here, we know index is not None
+		let mut end_set: usize = expr.find_first(&Token::Close(depth)).unwrap();
 		let mut lhs: Vec<Token> = Vec::new();
 		{
 			let (temp_lhs, temp_rhs) = expr.split_at(index); // [0, where set should be placed)
 			lhs = temp_lhs.to_vec();
 			let mut rhs = temp_rhs.to_vec(); // [where set should be placed, len)
 			rhs.remove(0);
-			let (left_rhs, right_rhs) = rhs.split_at(end_set-1);
+			end_set = end_set - (index + 1); // Compensate for part of vec split off and the removal of one element
+			let (left_rhs, right_rhs) = rhs.split_at(end_set);
 			let (left_rhs, mut right_rhs) = (left_rhs.to_vec(), right_rhs.to_vec());
 			right_rhs.remove(0);
 			lhs.push(Token::Set(left_rhs));
 			lhs.append(&mut right_rhs);
 		}
-		for i in (0..lhs.len()).rev() {
-			if lhs.get(i).unwrap() == &Token::Close {
-				lhs.remove(i);
-				break;
-			}
-		}
+
 		expr.replace_all_tokens(lhs);
+		println!("NEW EXPR {:?}", &expr);
+		depth += 1;
+		if depth > maxDepth {break;}
 	}
 	Ok(expr)
 }
