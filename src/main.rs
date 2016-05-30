@@ -6,7 +6,7 @@ use std::io::Write;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
-    Unknown, // Invalid test (basically non-ascii)
+    Unknown(String), // Invalid test (basically non-ascii)
     Literal(String), // Numeric literal number
     Func(Function), // Pre-defined function (like cos() )
     Const(Constant), // Constant like pi or e
@@ -47,6 +47,7 @@ pub enum Function {
     Asech,
     Atanh,
     Acoth,
+    Max,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -85,7 +86,6 @@ pub enum Order {
 #[derive(Debug, PartialEq, Clone)]
 struct Expression {
     tokens: Vec<Token>,
-    constant: f64,
 }
 
 struct ExpressionIter<'a> {
@@ -104,20 +104,12 @@ impl<'a> Iterator for ExpressionIter<'a> {
 
 #[allow(dead_code)]
 impl Expression {
-	fn new(tokens: Vec<Token>, constant: f64) -> Self {
-		Expression {tokens: tokens, constant: constant}
+	fn new(tokens: Vec<Token>) -> Self {
+		Expression {tokens: tokens}
 	}
 
 	fn push(&mut self, token: Token) {
 		self.tokens.push(token);
-	}
-
-	fn update_constant(&mut self, constant: &f64) {
-		self.constant += *constant;
-	}
-
-	fn get_constant(&self) -> f64 {
-		self.constant
 	}
 
 	fn get_tokens(&self) -> &[Token] {
@@ -201,11 +193,14 @@ fn main() {
         	print!("Exiting...");
         	break;
         }
-        let expr = match parse_input(&input, &numeric_regex, &function_regex) {
-        		Ok(x) => x,
-        		Err(x) => {println!("Encountered an error while parsing: {:?}", x); print!("Exiting..."); break;},
-        	};
-        println!("{:?}", &expr);
+        let expr = parse_input(&input, &numeric_regex, &function_regex);
+        if expr.is_ok() {
+        	println!("{:?}", &expr.unwrap());
+        } else {
+        	println!("Encountered an error while parsing: {:?}", expr.unwrap_err());
+        	println!("Try Again...(type 'quit' to exit)");
+        	continue;
+        }
     }
 }
 
@@ -216,9 +211,7 @@ fn strip_white_space(input: &String) -> String {
 fn parse_input(input: &String, numeric_regex: &Regex, function_regex: &Regex) -> Result<Expression, String> {
 	// 1. Replace everthing except letters/numbers with their enums
 	// 2. Then go through and replace things with Literals or functions
-	let mut expr: Expression = Expression::new(Vec::new(), 0.0);
-	let mut op_stack: Vec<Token> = Vec::with_capacity(input.len());
-	let mut out_queue: Vec<Token> = Vec::with_capacity(input.len());
+	let mut expr: Expression = Expression::new(Vec::new());
 	let mut builder: String = String::new();
 	for c in input.chars() {
 		match c {
@@ -323,73 +316,80 @@ fn parse_input(input: &String, numeric_regex: &Regex, function_regex: &Regex) ->
 		}
 		builder = String::new();
 	}
-	println!("EXPR {:?}", &expr);
+	let mut op_stack: Vec<Token> = Vec::with_capacity(input.len());
+	let mut out_queue: Vec<Token> = Vec::with_capacity(input.len());
+	//println!("EXPR {:?}", &expr);
 	for i in 0..expr.len() {
-		match expr.get_token(i) {
-			&Token::Literal(ref x) => out_queue.push(Token::Literal(x.clone())),
-			&Token::Func(ref x) => op_stack.push(Token::Func(x.clone())),
-			&Token::Comma => loop {
-				let token = op_stack.pop().unwrap();
-				match token {
-					Token::Open => {op_stack.push(Token::Open);break},
-					_ => out_queue.push(token),
-				}
+		let current_token = expr.get_token(i);
+		//println!("BEFORE current_token: {:?}, OPSTACK {:?}, out_queue {:?}", &current_token, &op_stack, &out_queue);
+		match current_token {
+		    &Token::Literal(ref x) => out_queue.push(Token::Literal(x.clone())),
+		    &Token::Func(ref x) => op_stack.push(Token::Func(x.clone())),
+		    &Token::Comma => {
+		    	let mut found_open = false;
+		    	loop {
+			    	let stack_token = try!{op_stack.pop().ok_or("Malformed Expression")};
+			    	match stack_token {
+			    	    Token::Open => {op_stack.push(stack_token); found_open=true; break;},
+			    	    _ => out_queue.push(stack_token),
+			    	}
+		    	}
+		    	if !found_open {return Err(String::from("Mismatch Parenthesis"))}
+			},
+		    &Token::Op(ref o1) =>  {
+		    	loop {
+			    	if op_stack.len() < 1 {
+						break;
+					}
+			    	let o2 = try!{op_stack.pop().ok_or("Malformed Expression")}; // top of stack
+			    	match o1 {
+			    	    &Operator::Pow => match o2 {
+			    	    	_ => { op_stack.push(o2); break; },
+			    	    },
+			    	    &Operator::Mul | &Operator::Div => match o2 {
+			    	    	Token::Op(Operator::Pow) | Token::Op(Operator::Mul) | Token::Op(Operator::Div) => out_queue.push(o2),
+			    	    	_ => { op_stack.push(o2); break; },
+			    	    },
+			    	    &Operator::Add | &Operator::Sub => match o2 {
+			    	    	Token::Op(Operator::Add) | Token::Op(Operator::Sub) => out_queue.push(o2),
+			    	    	_ => { op_stack.push(o2); break; },
+			    	    }
+			    	}
+		    	};
+		    	op_stack.push(Token::Op(o1.clone()));
 			},
 			&Token::Open => op_stack.push(Token::Open),
-			&Token::Close => loop {
-				let token = op_stack.pop().unwrap();
-				let mut flag = false;
-				match token {
-					Token::Open => {flag = true},
-					_ => out_queue.push(token),
-				}
-				if flag {
-					let token = op_stack.pop().unwrap();
-					match token {
-						Token::Func(ref x) => out_queue.push(Token::Func(x.clone())),
-						_ => break,
+			&Token::Close => {
+				let mut found_open = false;
+				loop {
+					let stack_token = try!{op_stack.pop().ok_or("Malformed Expression")};
+					match stack_token {
+						Token::Open => {op_stack.push(stack_token); found_open=true; break;},
+						_ => out_queue.push(stack_token),
 					}
-					break;
+				};
+				if !found_open {return Err(String::from("Mismatch Parenthesis"))}
+				let stack_token = try!{op_stack.pop().ok_or("Malformed Expression")};
+				let next_stack_token = try!{op_stack.pop().ok_or("Malformed Expression")};
+				match next_stack_token {
+					Token::Func(ref x) => out_queue.push(Token::Func(x.clone())),
+					_ => op_stack.push(next_stack_token),
 				}
 			},
-			&Token::Op(ref x) => loop {
-				if op_stack.len() < 1 {
-					op_stack.push(Token::Op(x.clone()));
-					break;
-				}
-				let mut flag = false;
-				let token = op_stack.get(op_stack.len()-1).unwrap().clone();
-				let order: usize = match token {
-				    Token::Op(Operator::Pow) => 4,
-				    Token::Op(Operator::Mul) => 3,
-				    Token::Op(Operator::Div) => 2,
-				    Token::Op(Operator::Sub) => 1,
-				    Token::Op(Operator::Add) => 0,
-				    _ => {flag = true;0},
-				};
-				if flag {
-					op_stack.push(Token::Op(x.clone()));
-					break;
-				}
-				match x {
-				    &Operator::Pow => if 4 < order {
-				    	out_queue.push(op_stack.pop().unwrap());
-				    },
-				    &Operator::Mul | &Operator::Div => if 2 <= order {
-				    	out_queue.push(op_stack.pop().unwrap());
-				    },
-				    &Operator::Add | &Operator::Sub => if 1 <= order {
-				    	out_queue.push(op_stack.pop().unwrap());
-				    },
-				};
+			&Token::Unknown(ref x) => {
+				let mut message: String = "You either misspelled a function, or it is not yet implemented. The unknown string was: ".to_owned();
+				message.push_str(x);
+				return Err(message);
 			},
-			_ => continue,
+		    _ => break,
 		}
+		//println!("AFTER current_token: {:?}, OPSTACK {:?}, out_queue {:?}\n\n\n", &current_token, &op_stack, &out_queue);
 	}
+	//println!("OPSTACK {:?}", &op_stack);
 	while op_stack.len() > 0 {
-	    out_queue.push(op_stack.pop().unwrap());
+	    out_queue.push(try!{op_stack.pop().ok_or("Malformed Expression")});
 	}
-	Ok(Expression::new(out_queue, 0.0))
+	Ok(Expression::new(out_queue))
 }
 
 fn map_string_to_func(input: &String) -> Token {
@@ -422,42 +422,7 @@ fn map_string_to_func(input: &String) -> Token {
 	    "asech" => Token::Func(Function::Asech),
 	    "atanh" => Token::Func(Function::Atanh),
 	    "acoth" => Token::Func(Function::Acoth),
-	    _ => Token::Unknown,
+	    "max" => Token::Func(Function::Max),
+	    _ => Token::Unknown(input.clone()),
 	}
-}
-
-#[test]
-fn test_parse() {
-	let numeric_regex: Regex = Regex::new(r"\d+\.\d+|\d+").unwrap();
-	let function_regex: Regex = Regex::new(r"\w{2,}").unwrap();
-	let input: String = String::from("22+(3.14-3)");
-	assert_eq!(Expression::new(vec![Token::Op(Operator::Add)], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("+");
-	assert_eq!(Expression::new(vec![Token::Op(Operator::Add)], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("-");
-	assert_eq!(Expression::new(vec![Token::Op(Operator::Sub)], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("/");
-	assert_eq!(Expression::new(vec![Token::Op(Operator::Div)], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("*");
-	assert_eq!(Expression::new(vec![Token::Op(Operator::Mul)], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("^");
-	assert_eq!(Expression::new(vec![Token::Op(Operator::Pow)], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("()");
-	assert_eq!(Expression::new(vec![Token::Open, Token::Close], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("(+)");
-	assert_eq!(Expression::new(vec![Token::Open, Token::Op(Operator::Add), Token::Close], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("(-)");
-	assert_eq!(Expression::new(vec![Token::Open, Token::Op(Operator::Sub), Token::Close], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("(*)");
-	assert_eq!(Expression::new(vec![Token::Open, Token::Op(Operator::Mul), Token::Close], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("(/)");
-	assert_eq!(Expression::new(vec![Token::Open, Token::Op(Operator::Div), Token::Close], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("(^)");
-	assert_eq!(Expression::new(vec![Token::Open, Token::Op(Operator::Pow), Token::Close], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("(())");
-	assert_eq!(Expression::new(vec![Token::Open, Token::Open, Token::Close, Token::Close], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
-	let input: String = String::from("+(+(-)*(+))+(/)^");
-	assert_eq!(Expression::new(vec![Token::Op(Operator::Add), Token::Open, Token::Op(Operator::Add), Token::Open, Token::Op(Operator::Sub),
-									Token::Close, Token::Op(Operator::Mul), Token::Open, Token::Op(Operator::Add), Token::Close, Token::Close,
-									Token::Op(Operator::Add), Token::Open, Token::Op(Operator::Div), Token::Close, Token::Op(Operator::Pow)], 0.0), parse_input(&input, &numeric_regex, &function_regex).unwrap());
 }
