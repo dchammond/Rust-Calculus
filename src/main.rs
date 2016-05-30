@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 extern crate regex;
 use regex::Regex;
 
@@ -85,7 +87,6 @@ impl<'a> Iterator for ExpressionIter<'a> {
     }
 }
 
-#[allow(dead_code)]
 impl Expression {
 	fn new(tokens: Vec<Token>) -> Self {
 		Expression {tokens: tokens}
