@@ -66,23 +66,6 @@ pub enum Operator {
     Pow=4, // Right
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[repr(u32)]
-pub enum Assoc {
-    Left=0,
-    Right=1,
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[repr(u32)]
-pub enum Order {
-    AddSub = 1,
-    MulDiv = 2,
-    IMul = 3, // Implicit multiplication
-    Pow = 4,
-    Paren = 5,
-}
-
 #[derive(Debug, PartialEq, Clone)]
 struct Expression {
     tokens: Vec<Token>,
