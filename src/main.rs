@@ -14,7 +14,7 @@ pub enum Token {
     Const(Constant), // Constant like pi or e
     Var(String), // str arbitrary single char variable name
     Op(Operator), // Any of the 4 operators (+-*/)
-    Open, // Open parens '(' 
+    Open, // Open parens '('
     Close, // Closing parens ')'
     Comma,
 }
