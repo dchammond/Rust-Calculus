@@ -174,7 +174,7 @@ fn main() {
         }
         input = strip_white_space(&input).to_lowercase();
         if input == "quit" {
-        	print!("Exiting...");
+        	println!("Exiting...");
         	break;
         }
         let expr = parse_input(&input, &numeric_regex, &function_regex);
@@ -312,20 +312,20 @@ fn parse_input(input: &String, numeric_regex: &Regex, function_regex: &Regex) ->
 		    &Token::Comma => {
 		    	let mut found_open = false;
 		    	loop {
-			    	let stack_token = try!{op_stack.pop().ok_or("Malformed Expression")};
+			    	let stack_token = try!{op_stack.pop().ok_or("Malformed Expression, comma but no Parenthesis")};
 			    	match stack_token {
 			    	    Token::Open => {op_stack.push(stack_token); found_open=true; break;},
 			    	    _ => out_queue.push(stack_token),
 			    	}
 		    	}
-		    	if !found_open {return Err(String::from("Mismatch Parenthesis"))}
+		    	if !found_open {return Err(String::from("Mismatched Parenthesis"))}
 			},
 		    &Token::Op(ref o1) =>  {
 		    	loop {
 			    	if op_stack.len() < 1 {
 						break;
 					}
-			    	let o2 = try!{op_stack.pop().ok_or("Malformed Expression")}; // top of stack
+			    	let o2 = try!{op_stack.pop().ok_or("Malformed Expression, no other operators on stack")}; // top of stack
 			    	match o1 {
 			    	    &Operator::Pow => match o2 {
 			    	    	_ => { op_stack.push(o2); break; },
@@ -346,18 +346,20 @@ fn parse_input(input: &String, numeric_regex: &Regex, function_regex: &Regex) ->
 			&Token::Close => {
 				let mut found_open = false;
 				loop {
-					let stack_token = try!{op_stack.pop().ok_or("Malformed Expression")};
+					let stack_token = try!{op_stack.pop().ok_or("Malformed Expression, found a ) without (")};
 					match stack_token {
-						Token::Open => {op_stack.push(stack_token); found_open=true; break;},
+						Token::Open => {/*op_stack.push(stack_token);*/ found_open=true; break;},
 						_ => out_queue.push(stack_token),
 					}
 				};
-				if !found_open {return Err(String::from("Mismatch Parenthesis"))}
-				let stack_token = try!{op_stack.pop().ok_or("Malformed Expression")};
-				let next_stack_token = try!{op_stack.pop().ok_or("Malformed Expression")};
-				match next_stack_token {
-					Token::Func(ref x) => out_queue.push(Token::Func(x.clone())),
-					_ => op_stack.push(next_stack_token),
+				if !found_open {return Err(String::from("Mismatched Parenthesis"))}
+				//let stack_token = try!{op_stack.pop().ok_or("Malformed Expression")};
+				if op_stack.len() > 0 {
+					let next_stack_token = try!{op_stack.pop().ok_or("Malformed Expression, no more operators on op stack")};
+					match next_stack_token {
+						Token::Func(ref x) => out_queue.push(Token::Func(x.clone())),
+						_ => op_stack.push(next_stack_token),
+					}
 				}
 			},
 			&Token::Unknown(ref x) => {
@@ -367,11 +369,9 @@ fn parse_input(input: &String, numeric_regex: &Regex, function_regex: &Regex) ->
 			},
 		    _ => break,
 		}
-		//println!("AFTER current_token: {:?}, OPSTACK {:?}, out_queue {:?}\n\n\n", &current_token, &op_stack, &out_queue);
 	}
-	//println!("OPSTACK {:?}", &op_stack);
 	while op_stack.len() > 0 {
-	    out_queue.push(try!{op_stack.pop().ok_or("Malformed Expression")});
+	    out_queue.push(try!{op_stack.pop().ok_or("Malformed Expression, could not pop item, despite their being an item")});
 	}
 	Ok(Expression::new(out_queue))
 }
