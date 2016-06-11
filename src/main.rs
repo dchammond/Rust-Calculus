@@ -155,43 +155,6 @@ impl Expression {
     }
 }
 
-fn main() {
-    let numeric_regex: Regex = Regex::new(r"\d+\.\d+|\d+").unwrap();
-    let function_regex: Regex = Regex::new(r"\w{2,}").unwrap();
-    println!("Welcome to Rust-Calculus!");
-    println!("To evaluate an expression, simply type one in and hit RETURN.");
-    println!("To set a variable, simply type VAR_NAME=EXPRESSION and hit RETURN.");
-    println!("Valid commands are: sym_int, int, sym_def, and def.");
-    println!("Type 'quit' to exit.");
-    let mut input = String::new();
-    let stdin = io::stdin();
-    let mut stdout = io::stdout();
-    loop {
-        input.clear();
-        print!(">>>> ");
-        stdout.flush().ok();
-        if let Err(x) = stdin.read_line(&mut input) {
-            println!("There was a problem reading stdin: {:?}", x);
-            print!("Exiting...");;
-            break;
-        }
-        input = strip_white_space(&input).to_lowercase();
-        if input == "quit" {
-            println!("Exiting...");
-            break;
-        }
-        let expr = parse_input(&input, &numeric_regex, &function_regex);
-        if expr.is_ok() {
-            println!("{:?}", &expr.unwrap());
-        } else {
-            println!("Encountered an error while parsing: {:?}",
-                     expr.unwrap_err());
-            println!("Try Again...(type 'quit' to exit)");
-            continue;
-        }
-    }
-}
-
 fn strip_white_space(input: &String) -> String {
     input.split_whitespace().collect::<Vec<&str>>().join("")
 }
@@ -430,5 +393,42 @@ fn map_string_to_func(input: &String) -> Token {
         "acoth" => Token::Func(Function::Acoth),
         "max" => Token::Func(Function::Max),
         _ => Token::Unknown(input.clone()),
+    }
+}
+
+fn main() {
+    let numeric_regex: Regex = Regex::new(r"\d+\.\d+|\d+").unwrap();
+    let function_regex: Regex = Regex::new(r"\w{2,}").unwrap();
+    println!("Welcome to Rust-Calculus!");
+    println!("To evaluate an expression, simply type one in and hit RETURN.");
+    println!("To set a variable, simply type VAR_NAME=EXPRESSION and hit RETURN.");
+    println!("Valid commands are: sym_int, int, sym_def, and def.");
+    println!("Type 'quit' to exit.");
+    let mut input = String::new();
+    let stdin = io::stdin();
+    let mut stdout = io::stdout();
+    loop {
+        input.clear();
+        print!(">>>> ");
+        stdout.flush().ok();
+        if let Err(x) = stdin.read_line(&mut input) {
+            println!("There was a problem reading stdin: {:?}", x);
+            print!("Exiting...");;
+            break;
+        }
+        input = strip_white_space(&input).to_lowercase();
+        if input == "quit" {
+            println!("Exiting...");
+            break;
+        }
+        let expr = parse_input(&input, &numeric_regex, &function_regex);
+        if expr.is_ok() {
+            println!("{:?}", &expr.unwrap());
+        } else {
+            println!("Encountered an error while parsing: {:?}",
+                     expr.unwrap_err());
+            println!("Try Again...(type 'quit' to exit)");
+            continue;
+        }
     }
 }
