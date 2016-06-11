@@ -1,5 +1,5 @@
 [package]
-name = "Rust-Calculus"
+name = "rust-calculus"
 version = "0.1.0"
 authors = ["dchammond <dillonhammond@gmail.com>"]
 
