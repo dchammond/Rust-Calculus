@@ -215,8 +215,7 @@ fn parse_input(input: &String,
                     }
                     builder = String::new();
 					expr.push(Token::Op(Operator::Sub));
-                }
-				if builder.len() == 0 {
+                } else if builder.len() == 0 {
 					expr.push(Token::Op(Operator::Negate));
 				}
             }
@@ -327,7 +326,20 @@ fn parse_input(input: &String,
                                 }
                             }
                         }
-                        &Operator::Add | &Operator::Sub => out_queue.push(o2),
+                        &Operator::Add | &Operator::Sub => {
+							match o2 {
+								Token::Op(Operator::Negate) |
+                                Token::Op(Operator::Pow) |
+                                Token::Op(Operator::Mul) |
+                                Token::Op(Operator::Div) |
+								Token::Op(Operator::Add) |
+								Token::Op(Operator::Sub) => out_queue.push(o2),
+								_ => {
+									op_stack.push(o2);
+									break;
+								},
+							}
+						}
                     }
                 }
                 op_stack.push(Token::Op(o1.clone()));
@@ -517,7 +529,6 @@ fn main() {
         let expr = parse_input(&input, &numeric_regex, &function_regex);
         if expr.is_ok() {
 			let my_expression = expr.unwrap();
-			println!("{:?}", &my_expression);
             println!("{:?}", eval_postfix_expr(&my_expression));
         } else {
             println!("Encountered an error while parsing: {:?}",
