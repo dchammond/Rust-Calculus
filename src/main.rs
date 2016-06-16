@@ -535,7 +535,7 @@ fn eval_postfix_expr(expr: &Expression, vars: &HashMap<String, f64>) -> f64 {
 	}
 	stack.pop().unwrap()
 }
-// test
+
 fn main() {
     let numeric_regex: Regex = Regex::new(r"\d+\.\d+|\d+").unwrap();
     let function_regex: Regex = Regex::new(r"\w{2,}").unwrap();
