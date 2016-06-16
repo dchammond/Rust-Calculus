@@ -6,6 +6,8 @@ use regex::Regex;
 use std::io;
 use std::io::Write;
 
+use std::collections::HashMap;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Unknown(String), // Invalid test (basically non-ascii)
@@ -166,9 +168,10 @@ fn strip_white_space(input: &String) -> String {
 fn parse_input(input: &String,
                numeric_regex: &Regex,
                function_regex: &Regex)
-               -> Result<Expression, String> {
+               -> (String, Result<Expression, String>) {
     // 1. Replace everthing except letters/numbers with their enums
     // 2. Then go through and replace things with Literals or functions
+    let mut variable: String = String::new();
     let mut expr: Expression = Expression::new(Vec::new());
     let mut builder: String = String::new();
     for c in input.chars() {
@@ -179,6 +182,8 @@ fn parse_input(input: &String,
                         expr.push(Token::Literal(builder.clone()));
                     } else if function_regex.is_match(&builder[..]) {
                         expr.push(map_string_to_func(&builder));
+                    } else {
+                        expr.push(Token::Var(builder.clone()));
                     }
                     builder = String::new();
                 }
@@ -190,6 +195,8 @@ fn parse_input(input: &String,
                         expr.push(Token::Literal(builder.clone()));
                     } else if function_regex.is_match(&builder[..]) {
                         expr.push(map_string_to_func(&builder));
+                    } else {
+                        expr.push(Token::Var(builder.clone()));
                     }
                     builder = String::new();
                 }
@@ -201,6 +208,8 @@ fn parse_input(input: &String,
                         expr.push(Token::Literal(builder.clone()));
                     } else if function_regex.is_match(&builder[..]) {
                         expr.push(map_string_to_func(&builder));
+                    } else {
+                        expr.push(Token::Var(builder.clone()));
                     }
                     builder = String::new();
                 }
@@ -212,6 +221,8 @@ fn parse_input(input: &String,
                         expr.push(Token::Literal(builder.clone()));
                     } else if function_regex.is_match(&builder[..]) {
                         expr.push(map_string_to_func(&builder));
+                    } else {
+                        expr.push(Token::Var(builder.clone()));
                     }
                     builder = String::new();
 					expr.push(Token::Op(Operator::Sub));
@@ -225,6 +236,8 @@ fn parse_input(input: &String,
                         expr.push(Token::Literal(builder.clone()));
                     } else if function_regex.is_match(&builder[..]) {
                         expr.push(map_string_to_func(&builder));
+                    } else {
+                        expr.push(Token::Var(builder.clone()));
                     }
                     builder = String::new();
                 }
@@ -236,6 +249,8 @@ fn parse_input(input: &String,
                         expr.push(Token::Literal(builder.clone()));
                     } else if function_regex.is_match(&builder[..]) {
                         expr.push(map_string_to_func(&builder));
+                    } else {
+                        expr.push(Token::Var(builder.clone()));
                     }
                     builder = String::new();
                 }
@@ -247,6 +262,8 @@ fn parse_input(input: &String,
                         expr.push(Token::Literal(builder.clone()));
                     } else if function_regex.is_match(&builder[..]) {
                         expr.push(map_string_to_func(&builder));
+                    } else {
+                        expr.push(Token::Var(builder.clone()));
                     }
                     builder = String::new();
                 }
@@ -258,10 +275,18 @@ fn parse_input(input: &String,
                         expr.push(Token::Literal(builder.clone()));
                     } else if function_regex.is_match(&builder[..]) {
                         expr.push(map_string_to_func(&builder));
+                    } else {
+                        expr.push(Token::Var(builder.clone()));
                     }
                     builder = String::new();
                 }
                 expr.push(Token::Comma);
+            }
+            '=' => {
+                if builder.len() > 0 {
+                    variable = builder.clone();
+                    builder = String::new();
+                }
             }
             _ => {
                 builder.push(c);
@@ -273,6 +298,8 @@ fn parse_input(input: &String,
             expr.push(Token::Literal(builder.clone()));
         } else if function_regex.is_match(&builder[..]) {
             expr.push(map_string_to_func(&builder));
+        } else {
+	        expr.push(Token::Var(builder.clone()));
         }
     }
     let mut op_stack: Vec<Token> = Vec::with_capacity(input.len());
@@ -284,7 +311,11 @@ fn parse_input(input: &String,
             &Token::Func(ref x) => op_stack.push(Token::Func(x.clone())),
             &Token::Comma => {
                 loop {
-                    let stack_token = try!{op_stack.pop().ok_or("Malformed Expression, comma but no Parenthesis")};
+                    let stack_token = op_stack.pop();
+                    if !stack_token.is_some() {
+                        return (variable, Err("Malformed Expression, comma but no Parenthesis".to_owned()));
+                    }
+                    let stack_token = stack_token.unwrap();
                     match stack_token {
                         Token::Open => {
                             op_stack.push(stack_token);
@@ -347,8 +378,11 @@ fn parse_input(input: &String,
             &Token::Open => op_stack.push(Token::Open),
             &Token::Close => {
                 loop {
-                    let stack_token =
-                        try!{op_stack.pop().ok_or("Malformed Expression, found a ) without (")};
+                    let stack_token = op_stack.pop();
+                    if !stack_token.is_some() {
+                        return (variable, Err("Malformed Expression, found a ) without (".to_owned()));
+                    }
+                    let stack_token = stack_token.unwrap();
                     match stack_token {
                         Token::Open => break,
                         _ => out_queue.push(stack_token),
@@ -362,11 +396,12 @@ fn parse_input(input: &String,
                     }
                 }
             }
+            &Token::Var(ref x) => out_queue.push(Token::Var(x.clone())),
             &Token::Unknown(ref x) => {
                 let mut message: String = "You either misspelled a function, or it is not yet \
                                            implemented. The unknown string was: ".to_owned();
                 message.push_str(x);
-                return Err(message);
+                return (variable, Err(message));
             }
             _ => break,
         }
@@ -374,7 +409,7 @@ fn parse_input(input: &String,
     while op_stack.len() > 0 {
         out_queue.push(op_stack.pop().unwrap()); // The item must exist
     }
-    Ok(Expression::new(out_queue))
+    (variable, Ok(Expression::new(out_queue)))
 }
 
 fn map_string_to_func(input: &String) -> Token {
@@ -411,11 +446,11 @@ fn map_string_to_func(input: &String) -> Token {
         "acoth" => Token::Func(Function::Acoth),
         "max" => Token::Func(Function::Max),
 		"recip" => Token::Func(Function::Recip),
-        _ => Token::Unknown(input.clone()),
+        _ => Token::Var(input.clone()),
     }
 }
 
-fn eval_postfix_expr(expr: &Expression) -> f64 {
+fn eval_postfix_expr(expr: &Expression, vars: &HashMap<String, f64>) -> f64 {
 	let mut stack: Vec<f64>= Vec::with_capacity(expr.len()/2);
 	for token in expr.iter() {
 		match token {
@@ -492,8 +527,8 @@ fn eval_postfix_expr(expr: &Expression) -> f64 {
 				continue;
 			},
 			&Token::Var(ref x) => {
-				let _ = stack.pop().unwrap();
-				continue;
+				let value: f64 = *vars.get(x).unwrap();
+                stack.push(value);
 			},
 			_ => continue
 		}
@@ -512,7 +547,10 @@ fn main() {
     let mut input = String::new();
     let stdin = io::stdin();
     let mut stdout = io::stdout();
+    let mut variables: HashMap<String, f64> = HashMap::new();
+    let mut var_expr: bool;
     loop {
+        var_expr = false;
         input.clear();
         print!(">>>> ");
         stdout.flush().ok();
@@ -526,10 +564,26 @@ fn main() {
             println!("Exiting...");
             break;
         }
-        let expr = parse_input(&input, &numeric_regex, &function_regex);
+        let (var, expr) = parse_input(&input, &numeric_regex, &function_regex);
+        if var.len() > 0 {
+            var_expr = true;
+            if !variables.contains_key(&var) {
+                variables.insert(var.clone(), 0.0);
+            }
+        } else {
+            var_expr = false;
+        }
         if expr.is_ok() {
 			let my_expression = expr.unwrap();
-            println!("{:?}", eval_postfix_expr(&my_expression));
+            println!("HASHMAP BEFORE: {:?}", &variables);
+            let result = eval_postfix_expr(&my_expression, &variables);
+            if var_expr {
+                variables.insert(var.clone(), result);
+                println!("{} = {}", &var, &result);
+            } else {
+                println!("{}", &result);
+            }
+            println!("HASHMAP AFTER: {:?}", &variables);
         } else {
             println!("Encountered an error while parsing: {:?}",
                      expr.unwrap_err());
