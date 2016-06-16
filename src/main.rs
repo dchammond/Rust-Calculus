@@ -24,11 +24,11 @@ pub enum Token {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Function {
     Abs,
-	Exp,
+    Exp,
     Sqrt,
     Ln,
     Log,
-	LogBase,
+    LogBase,
     Sin,
     Csc,
     Cos,
@@ -54,7 +54,7 @@ pub enum Function {
     Atanh,
     Acoth,
     Max,
-	Recip,
+    Recip,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -71,7 +71,7 @@ pub enum Operator {
     Div = 2,
     Mul = 3,
     Pow = 4, // Right
-	Negate = 5, // Right
+    Negate = 5, // Right
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -225,10 +225,10 @@ fn parse_input(input: &String,
                         expr.push(Token::Var(builder.clone()));
                     }
                     builder = String::new();
-					expr.push(Token::Op(Operator::Sub));
+                    expr.push(Token::Op(Operator::Sub));
                 } else if builder.len() == 0 {
-					expr.push(Token::Op(Operator::Negate));
-				}
+                    expr.push(Token::Op(Operator::Negate));
+                }
             }
             '*' => {
                 if builder.len() > 0 {
@@ -299,7 +299,7 @@ fn parse_input(input: &String,
         } else if function_regex.is_match(&builder[..]) {
             expr.push(map_string_to_func(&builder));
         } else {
-	        expr.push(Token::Var(builder.clone()));
+            expr.push(Token::Var(builder.clone()));
         }
     }
     let mut op_stack: Vec<Token> = Vec::with_capacity(input.len());
@@ -313,7 +313,8 @@ fn parse_input(input: &String,
                 loop {
                     let stack_token = op_stack.pop();
                     if !stack_token.is_some() {
-                        return (variable, Err("Malformed Expression, comma but no Parenthesis".to_owned()));
+                        return (variable,
+                                Err("Malformed Expression, comma but no Parenthesis".to_owned()));
                     }
                     let stack_token = stack_token.unwrap();
                     match stack_token {
@@ -332,22 +333,22 @@ fn parse_input(input: &String,
                     }
                     let o2 = op_stack.pop().unwrap(); // top of stack, must exist based off of previous if
                     match o1 {
-						&Operator::Negate => {
-							op_stack.push(o2);
-							break;
-						},
+                        &Operator::Negate => {
+                            op_stack.push(o2);
+                            break;
+                        }
                         &Operator::Pow => {
                             match o2 {
-								Token::Op(Operator::Negate) => out_queue.push(o2),
+                                Token::Op(Operator::Negate) => out_queue.push(o2),
                                 _ => {
                                     op_stack.push(o2);
                                     break;
                                 }
                             }
-                        },
+                        }
                         &Operator::Mul | &Operator::Div => {
                             match o2 {
-								Token::Op(Operator::Negate) |
+                                Token::Op(Operator::Negate) |
                                 Token::Op(Operator::Pow) |
                                 Token::Op(Operator::Mul) |
                                 Token::Op(Operator::Div) => out_queue.push(o2),
@@ -358,19 +359,19 @@ fn parse_input(input: &String,
                             }
                         }
                         &Operator::Add | &Operator::Sub => {
-							match o2 {
-								Token::Op(Operator::Negate) |
+                            match o2 {
+                                Token::Op(Operator::Negate) |
                                 Token::Op(Operator::Pow) |
                                 Token::Op(Operator::Mul) |
                                 Token::Op(Operator::Div) |
-								Token::Op(Operator::Add) |
-								Token::Op(Operator::Sub) => out_queue.push(o2),
-								_ => {
-									op_stack.push(o2);
-									break;
-								},
-							}
-						}
+                                Token::Op(Operator::Add) |
+                                Token::Op(Operator::Sub) => out_queue.push(o2),
+                                _ => {
+                                    op_stack.push(o2);
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
                 op_stack.push(Token::Op(o1.clone()));
@@ -380,7 +381,8 @@ fn parse_input(input: &String,
                 loop {
                     let stack_token = op_stack.pop();
                     if !stack_token.is_some() {
-                        return (variable, Err("Malformed Expression, found a ) without (".to_owned()));
+                        return (variable,
+                                Err("Malformed Expression, found a ) without (".to_owned()));
                     }
                     let stack_token = stack_token.unwrap();
                     match stack_token {
@@ -415,11 +417,11 @@ fn parse_input(input: &String,
 fn map_string_to_func(input: &String) -> Token {
     match &(input.to_lowercase())[..] {
         "abs" => Token::Func(Function::Abs),
-		"exp" => Token::Func(Function::Exp),
+        "exp" => Token::Func(Function::Exp),
         "sqrt" => Token::Func(Function::Sqrt),
         "ln" => Token::Func(Function::Ln),
         "log" => Token::Func(Function::Log),
-		"logbase" => Token::Func(Function::LogBase),
+        "logbase" => Token::Func(Function::LogBase),
         "sin" => Token::Func(Function::Sin),
         "csc" => Token::Func(Function::Csc),
         "cos" => Token::Func(Function::Cos),
@@ -445,99 +447,101 @@ fn map_string_to_func(input: &String) -> Token {
         "atanh" => Token::Func(Function::Atanh),
         "acoth" => Token::Func(Function::Acoth),
         "max" => Token::Func(Function::Max),
-		"recip" => Token::Func(Function::Recip),
+        "recip" => Token::Func(Function::Recip),
         _ => Token::Var(input.clone()),
     }
 }
 
 fn eval_postfix_expr(expr: &Expression, vars: &HashMap<String, f64>) -> f64 {
-	let mut stack: Vec<f64>= Vec::with_capacity(expr.len()/2);
-	for token in expr.iter() {
-		match token {
-			&Token::Literal(ref x) => stack.push(x.parse::<f64>().unwrap()),
-			&Token::Const(ref x) => match x {
-				&Constant::Pi => stack.push(std::f64::consts::PI),
-				&Constant::E => stack.push(std::f64::consts::E),
-			},
-			&Token::Op(ref x) => {
-				let arg: f64 = stack.pop().unwrap();
-				match x {
-					&Operator::Negate => stack.push(-1.0f64 * arg),
-					_ => {
-						let arg2 = arg;
-						let arg1 = stack.pop().unwrap();
-						match x {
-							&Operator::Add => stack.push(arg1 + arg2),
-							&Operator::Sub => stack.push(arg1 - arg2),
-							&Operator::Div => stack.push(arg1 / arg2),
-							&Operator::Mul => stack.push(arg1 * arg2),
-							&Operator::Pow => stack.push(arg1.powf(arg2)),
-							_ => continue, // Should never hit here
-						}
-					}
-				}
-			},
-			&Token::Func(ref x) => {
-				let arg: f64 = stack.pop().unwrap();
-				match x {
-					&Function::Abs => stack.push(f64::abs(arg)),
-					&Function::Sqrt => stack.push(f64::sqrt(arg)),
-					&Function::Ln => stack.push(f64::ln(arg)),
-					&Function::Log => stack.push(f64::log10(arg)),
-					&Function::Exp => stack.push(f64::exp(arg)),
-					&Function::Sin => stack.push(f64::sin(arg)),
-					&Function::Csc => stack.push(f64::recip(f64::sin(arg))),
-					&Function::Cos => stack.push(f64::cos(arg)),
-					&Function::Sec => stack.push(f64::recip(f64::cos(arg))),
-					&Function::Tan => stack.push(f64::tan(arg)),
-					&Function::Cot => stack.push(f64::recip(f64::tan(arg))),
-					&Function::Asin => stack.push(f64::asin(arg)),
-					&Function::Acsc => stack.push(f64::recip(f64::asin(arg))),
-					&Function::Acos => stack.push(f64::acos(arg)),
-					&Function::Asec => stack.push(f64::recip(f64::acos(arg))),
-					&Function::Atan => stack.push(f64::atan(arg)),
-					&Function::Acot => stack.push(f64::recip(f64::atan(arg))),
-					&Function::Sinh => stack.push(f64::sinh(arg)),
-					&Function::Csch => stack.push(f64::recip(f64::sinh(arg))),
-					&Function::Cosh => stack.push(f64::cosh(arg)),
-					&Function::Sech => stack.push(f64::recip(f64::cosh(arg))),
-					&Function::Tanh => stack.push(f64::tanh(arg)),
-					&Function::Coth => stack.push(f64::recip(f64::tanh(arg))),
-					&Function::Asinh => stack.push(f64::asinh(arg)),
-					&Function::Acsch => stack.push(f64::recip(f64::asinh(arg))),
-					&Function::Acosh => stack.push(f64::acosh(arg)),
-					&Function::Asech => stack.push(f64::recip(f64::acosh(arg))),
-					&Function::Atanh => stack.push(f64::atanh(arg)),
-					&Function::Acoth => stack.push(f64::recip(f64::atanh(arg))),
-					&Function::Recip => stack.push(f64::recip(arg)),
-					&Function::Max => {
-						let arg2 = arg;
-						let arg1 = stack.pop().unwrap();
-						stack.push(arg1.max(arg2));
-					},
-					&Function::LogBase => {
-						let arg2 = arg;
-						let arg1 = stack.pop().unwrap();
-						stack.push(arg1.log(arg2)); // logbase(8,2) == 3
-					}
-				}
-			},
-			&Token::Unknown(ref x) => {
+    let mut stack: Vec<f64> = Vec::with_capacity(expr.len() / 2);
+    for token in expr.iter() {
+        match token {
+            &Token::Literal(ref x) => stack.push(x.parse::<f64>().unwrap()),
+            &Token::Const(ref x) => {
+                match x {
+                    &Constant::Pi => stack.push(std::f64::consts::PI),
+                    &Constant::E => stack.push(std::f64::consts::E),
+                }
+            }
+            &Token::Op(ref x) => {
+                let arg: f64 = stack.pop().unwrap();
+                match x {
+                    &Operator::Negate => stack.push(-1.0f64 * arg),
+                    _ => {
+                        let arg2 = arg;
+                        let arg1 = stack.pop().unwrap();
+                        match x {
+                            &Operator::Add => stack.push(arg1 + arg2),
+                            &Operator::Sub => stack.push(arg1 - arg2),
+                            &Operator::Div => stack.push(arg1 / arg2),
+                            &Operator::Mul => stack.push(arg1 * arg2),
+                            &Operator::Pow => stack.push(arg1.powf(arg2)),
+                            _ => continue, // Should never hit here
+                        }
+                    }
+                }
+            }
+            &Token::Func(ref x) => {
+                let arg: f64 = stack.pop().unwrap();
+                match x {
+                    &Function::Abs => stack.push(f64::abs(arg)),
+                    &Function::Sqrt => stack.push(f64::sqrt(arg)),
+                    &Function::Ln => stack.push(f64::ln(arg)),
+                    &Function::Log => stack.push(f64::log10(arg)),
+                    &Function::Exp => stack.push(f64::exp(arg)),
+                    &Function::Sin => stack.push(f64::sin(arg)),
+                    &Function::Csc => stack.push(f64::recip(f64::sin(arg))),
+                    &Function::Cos => stack.push(f64::cos(arg)),
+                    &Function::Sec => stack.push(f64::recip(f64::cos(arg))),
+                    &Function::Tan => stack.push(f64::tan(arg)),
+                    &Function::Cot => stack.push(f64::recip(f64::tan(arg))),
+                    &Function::Asin => stack.push(f64::asin(arg)),
+                    &Function::Acsc => stack.push(f64::recip(f64::asin(arg))),
+                    &Function::Acos => stack.push(f64::acos(arg)),
+                    &Function::Asec => stack.push(f64::recip(f64::acos(arg))),
+                    &Function::Atan => stack.push(f64::atan(arg)),
+                    &Function::Acot => stack.push(f64::recip(f64::atan(arg))),
+                    &Function::Sinh => stack.push(f64::sinh(arg)),
+                    &Function::Csch => stack.push(f64::recip(f64::sinh(arg))),
+                    &Function::Cosh => stack.push(f64::cosh(arg)),
+                    &Function::Sech => stack.push(f64::recip(f64::cosh(arg))),
+                    &Function::Tanh => stack.push(f64::tanh(arg)),
+                    &Function::Coth => stack.push(f64::recip(f64::tanh(arg))),
+                    &Function::Asinh => stack.push(f64::asinh(arg)),
+                    &Function::Acsch => stack.push(f64::recip(f64::asinh(arg))),
+                    &Function::Acosh => stack.push(f64::acosh(arg)),
+                    &Function::Asech => stack.push(f64::recip(f64::acosh(arg))),
+                    &Function::Atanh => stack.push(f64::atanh(arg)),
+                    &Function::Acoth => stack.push(f64::recip(f64::atanh(arg))),
+                    &Function::Recip => stack.push(f64::recip(arg)),
+                    &Function::Max => {
+                        let arg2 = arg;
+                        let arg1 = stack.pop().unwrap();
+                        stack.push(arg1.max(arg2));
+                    }
+                    &Function::LogBase => {
+                        let arg2 = arg;
+                        let arg1 = stack.pop().unwrap();
+                        stack.push(arg1.log(arg2)); // logbase(8,2) == 3
+                    }
+                }
+            }
+            &Token::Unknown(ref x) => {
                 let _ = x;
-				let _ = stack.pop().unwrap();
-			},
-			&Token::Var(ref x) => {
+                let _ = stack.pop().unwrap();
+            }
+            &Token::Var(ref x) => {
                 let value = vars.get(x);
                 if value.is_some() {
                     stack.push(*value.unwrap());
                 } else {
                     stack.push(0.0);
                 }
-			},
-			_ => continue
-		}
-	}
-	stack.pop().unwrap()
+            }
+            _ => continue,
+        }
+    }
+    stack.pop().unwrap()
 }
 
 fn main() {
@@ -577,7 +581,7 @@ fn main() {
             var_expr = false;
         }
         if expr.is_ok() {
-			let my_expression = expr.unwrap();
+            let my_expression = expr.unwrap();
             let result = eval_postfix_expr(&my_expression, &variables);
             if var_expr {
                 variables.insert(var.clone(), result);
