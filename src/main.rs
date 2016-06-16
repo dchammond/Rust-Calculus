@@ -574,7 +574,6 @@ fn main() {
         }
         if expr.is_ok() {
 			let my_expression = expr.unwrap();
-            println!("HASHMAP BEFORE: {:?}", &variables);
             let result = eval_postfix_expr(&my_expression, &variables);
             if var_expr {
                 variables.insert(var.clone(), result);
@@ -582,7 +581,6 @@ fn main() {
             } else {
                 println!("{}", &result);
             }
-            println!("HASHMAP AFTER: {:?}", &variables);
         } else {
             println!("Encountered an error while parsing: {:?}",
                      expr.unwrap_err());
