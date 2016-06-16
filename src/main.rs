@@ -523,12 +523,16 @@ fn eval_postfix_expr(expr: &Expression, vars: &HashMap<String, f64>) -> f64 {
 				}
 			},
 			&Token::Unknown(ref x) => {
+                let _ = x;
 				let _ = stack.pop().unwrap();
-				continue;
 			},
 			&Token::Var(ref x) => {
-				let value: f64 = *vars.get(x).unwrap();
-                stack.push(value);
+                let value = vars.get(x);
+                if value.is_some() {
+                    stack.push(*value.unwrap());
+                } else {
+                    stack.push(0.0);
+                }
 			},
 			_ => continue
 		}
