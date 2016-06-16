@@ -550,7 +550,6 @@ fn main() {
     let mut variables: HashMap<String, f64> = HashMap::new();
     let mut var_expr: bool;
     loop {
-        var_expr = false;
         input.clear();
         print!(">>>> ");
         stdout.flush().ok();
