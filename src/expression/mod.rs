@@ -23,7 +23,7 @@ impl<'a> Iterator for ExpressionIter<'a> {
 
 impl Expression {
     pub fn new(tokens: Vec<enums::Token>) -> Self {
-         Expression { tokens: tokens }
+        Expression { tokens: tokens }
     }
 
     pub fn push(&mut self, token: enums::Token) {

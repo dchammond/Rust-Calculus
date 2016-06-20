@@ -7,16 +7,16 @@ use expression::enums;
 pub type Expression = expression::Expression;
 
 pub fn parse_input(input: &String,
-               numeric_regex: &Regex,
-               function_regex: &Regex)
-               -> (String, Result<Expression, String>) {
+                   numeric_regex: &Regex,
+                   function_regex: &Regex)
+                   -> (String, Result<Expression, String>) {
     let (variable, expr) = string_to_expr(input, numeric_regex, function_regex);
     convert_to_postfix(input, variable, expr)
 }
 
 fn string_to_expr(input: &String,
                   numeric_regex: &Regex,
-	              function_regex: &Regex)
+                  function_regex: &Regex)
                   -> (String, Expression) {
     // 1. Replace everthing except letters/numbers with their enums
     // 2. Then go through and replace things with Literals or functions
@@ -100,7 +100,10 @@ fn string_to_expr(input: &String,
     (variable, expr)
 }
 
-fn convert_to_postfix(input: &String, variable: String, expr: Expression) -> (String, Result<Expression, String>) {
+fn convert_to_postfix(input: &String,
+                      variable: String,
+                      expr: Expression)
+                      -> (String, Result<Expression, String>) {
     let mut op_stack: Vec<enums::Token> = Vec::with_capacity(input.len());
     let mut out_queue: Vec<enums::Token> = Vec::with_capacity(input.len());
     for i in 0..expr.len() {
@@ -145,7 +148,8 @@ fn convert_to_postfix(input: &String, variable: String, expr: Expression) -> (St
                                 }
                             }
                         }
-                        &enums::Operator::Mul | &enums::Operator::Div => {
+                        &enums::Operator::Mul |
+                        &enums::Operator::Div => {
                             match o2 {
                                 enums::Token::Op(enums::Operator::Negate) |
                                 enums::Token::Op(enums::Operator::Pow) |
@@ -157,7 +161,8 @@ fn convert_to_postfix(input: &String, variable: String, expr: Expression) -> (St
                                 }
                             }
                         }
-                        &enums::Operator::Add | &enums::Operator::Sub => {
+                        &enums::Operator::Add |
+                        &enums::Operator::Sub => {
                             match o2 {
                                 enums::Token::Op(enums::Operator::Negate) |
                                 enums::Token::Op(enums::Operator::Pow) |
