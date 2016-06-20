@@ -26,107 +26,59 @@ fn string_to_expr(input: &String,
     for c in input.chars() {
         match c {
             '(' => {
-                if builder.len() > 0 {
-                    if numeric_regex.is_match(&builder[..]) {
-                        expr.push(enums::Token::Literal(builder.clone()));
-                    } else if function_regex.is_match(&builder[..]) {
-                        expr.push(enums::map_string_to_func(&builder));
-                    } else {
-                        expr.push(enums::Token::Var(builder.clone()));
-                    }
+                if let Some(x) = decide_what_to_push(&builder, numeric_regex, function_regex) {
+                    expr.push(x);
                     builder = String::new();
                 }
                 expr.push(enums::Token::Open);
             }
             ')' => {
-                if builder.len() > 0 {
-                    if numeric_regex.is_match(&builder[..]) {
-                        expr.push(enums::Token::Literal(builder.clone()));
-                    } else if function_regex.is_match(&builder[..]) {
-                        expr.push(enums::map_string_to_func(&builder));
-                    } else {
-                        expr.push(enums::Token::Var(builder.clone()));
-                    }
+                if let Some(x) = decide_what_to_push(&builder, numeric_regex, function_regex) {
+                    expr.push(x);
                     builder = String::new();
                 }
                 expr.push(enums::Token::Close);
             }
             '+' => {
-                if builder.len() > 0 {
-                    if numeric_regex.is_match(&builder[..]) {
-                        expr.push(enums::Token::Literal(builder.clone()));
-                    } else if function_regex.is_match(&builder[..]) {
-                        expr.push(enums::map_string_to_func(&builder));
-                    } else {
-                        expr.push(enums::Token::Var(builder.clone()));
-                    }
+                if let Some(x) = decide_what_to_push(&builder, numeric_regex, function_regex) {
+                    expr.push(x);
                     builder = String::new();
                 }
                 expr.push(enums::Token::Op(enums::Operator::Add));
             }
             '-' => {
-                if builder.len() > 0 {
-                    if numeric_regex.is_match(&builder[..]) {
-                        expr.push(enums::Token::Literal(builder.clone()));
-                    } else if function_regex.is_match(&builder[..]) {
-                        expr.push(enums::map_string_to_func(&builder));
-                    } else {
-                        expr.push(enums::Token::Var(builder.clone()));
-                    }
-                    builder = String::new();
+                if let Some(x) = decide_what_to_push(&builder, numeric_regex, function_regex) {
+                    expr.push(x);
                     expr.push(enums::Token::Op(enums::Operator::Sub));
+                    builder = String::new();
                 } else if builder.len() == 0 {
                     expr.push(enums::Token::Op(enums::Operator::Negate));
                 }
             }
             '*' => {
-                if builder.len() > 0 {
-                    if numeric_regex.is_match(&builder[..]) {
-                        expr.push(enums::Token::Literal(builder.clone()));
-                    } else if function_regex.is_match(&builder[..]) {
-                        expr.push(enums::map_string_to_func(&builder));
-                    } else {
-                        expr.push(enums::Token::Var(builder.clone()));
-                    }
+                if let Some(x) = decide_what_to_push(&builder, numeric_regex, function_regex) {
+                    expr.push(x);
                     builder = String::new();
                 }
                 expr.push(enums::Token::Op(enums::Operator::Mul));
             }
             '/' => {
-                if builder.len() > 0 {
-                    if numeric_regex.is_match(&builder[..]) {
-                        expr.push(enums::Token::Literal(builder.clone()));
-                    } else if function_regex.is_match(&builder[..]) {
-                        expr.push(enums::map_string_to_func(&builder));
-                    } else {
-                        expr.push(enums::Token::Var(builder.clone()));
-                    }
+                if let Some(x) = decide_what_to_push(&builder, numeric_regex, function_regex) {
+                    expr.push(x);
                     builder = String::new();
                 }
                 expr.push(enums::Token::Op(enums::Operator::Div));
             }
             '^' => {
-                if builder.len() > 0 {
-                    if numeric_regex.is_match(&builder[..]) {
-                        expr.push(enums::Token::Literal(builder.clone()));
-                    } else if function_regex.is_match(&builder[..]) {
-                        expr.push(enums::map_string_to_func(&builder));
-                    } else {
-                        expr.push(enums::Token::Var(builder.clone()));
-                    }
+                if let Some(x) = decide_what_to_push(&builder, numeric_regex, function_regex) {
+                    expr.push(x);
                     builder = String::new();
                 }
                 expr.push(enums::Token::Op(enums::Operator::Pow));
             }
             ',' => {
-                if builder.len() > 0 {
-                    if numeric_regex.is_match(&builder[..]) {
-                        expr.push(enums::Token::Literal(builder.clone()));
-                    } else if function_regex.is_match(&builder[..]) {
-                        expr.push(enums::map_string_to_func(&builder));
-                    } else {
-                        expr.push(enums::Token::Var(builder.clone()));
-                    }
+                if let Some(x) = decide_what_to_push(&builder, numeric_regex, function_regex) {
+                    expr.push(x);
                     builder = String::new();
                 }
                 expr.push(enums::Token::Comma);
@@ -142,14 +94,8 @@ fn string_to_expr(input: &String,
             }
         }
     }
-    if builder.len() > 0 {
-        if numeric_regex.is_match(&builder[..]) {
-            expr.push(enums::Token::Literal(builder.clone()));
-        } else if function_regex.is_match(&builder[..]) {
-            expr.push(enums::map_string_to_func(&builder));
-        } else {
-            expr.push(enums::Token::Var(builder.clone()));
-        }
+    if let Some(x) = decide_what_to_push(&builder, numeric_regex, function_regex) {
+        expr.push(x);
     }
     (variable, expr)
 }
@@ -265,4 +211,22 @@ fn convert_to_postfix(input: &String, variable: String, expr: Expression) -> (St
         out_queue.push(op_stack.pop().unwrap()); // The item must exist
     }
     (variable, Ok(Expression::new(out_queue)))
+}
+
+fn decide_what_to_push(builder: &String,
+                       numeric_regex: &Regex,
+                       function_regex: &Regex)
+                       -> Option<enums::Token> {
+    if builder.len() > 0 {
+        let to_push;
+        if numeric_regex.is_match(&builder[..]) {
+            to_push = enums::Token::Literal(builder.clone());
+        } else if function_regex.is_match(&builder[..]) {
+            to_push = enums::map_string_to_func(&builder);
+        } else {
+            to_push = enums::Token::Var(builder.clone());
+        }
+        return Some(to_push);
+    }
+    None
 }
