@@ -21,7 +21,7 @@ fn strip_white_space(input: &String) -> String {
 
 fn main() {
     let numeric_regex: Regex = Regex::new(r"\d+\.\d+|\d+").unwrap();
-    let function_regex: Regex = Regex::new(r"\w{2,}").unwrap();
+    let function_regex: Regex = Regex::new(r"[a-zA-Z]{2,}").unwrap();
     println!("Welcome to Rust-Calculus!");
     println!("To evaluate an expression, simply type one in and hit RETURN.");
     println!("To set a variable, simply type VAR_NAME=EXPRESSION and hit RETURN.");
