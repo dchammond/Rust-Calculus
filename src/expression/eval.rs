@@ -29,6 +29,7 @@ pub fn eval_postfix_expr(expr: &Expression, vars: &HashMap<String, f64>) -> f64 
                             &enums::Operator::Sub => stack.push(arg1 - arg2),
                             &enums::Operator::Div => stack.push(arg1 / arg2),
                             &enums::Operator::Mul => stack.push(arg1 * arg2),
+                            &enums::Operator::Mod => stack.push(arg1 % arg2),
                             &enums::Operator::Pow => stack.push(arg1.powf(arg2)),
                             _ => continue, // Should never hit here
                         }

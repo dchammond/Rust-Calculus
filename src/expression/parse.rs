@@ -83,6 +83,13 @@ fn string_to_expr(input: &String,
                 }
                 expr.push(enums::Token::Comma);
             }
+            '%' => {
+                if let Some(x) = decide_what_to_push(&builder, numeric_regex, function_regex) {
+                    expr.push(x);
+                    builder = String::new();
+                }
+                expr.push(enums::Token::Op(enums::Operator::Mod));
+            }
             '=' => {
                 if builder.len() > 0 {
                     variable = builder.clone();
@@ -149,12 +156,14 @@ fn convert_to_postfix(input: &String,
                             }
                         }
                         &enums::Operator::Mul |
-                        &enums::Operator::Div => {
+                        &enums::Operator::Div |
+                        &enums::Operator::Mod => {
                             match o2 {
                                 enums::Token::Op(enums::Operator::Negate) |
                                 enums::Token::Op(enums::Operator::Pow) |
                                 enums::Token::Op(enums::Operator::Mul) |
-                                enums::Token::Op(enums::Operator::Div) => out_queue.push(o2),
+                                enums::Token::Op(enums::Operator::Div) |
+                                enums::Token::Op(enums::Operator::Mod) => out_queue.push(o2),
                                 _ => {
                                     op_stack.push(o2);
                                     break;
@@ -168,6 +177,7 @@ fn convert_to_postfix(input: &String,
                                 enums::Token::Op(enums::Operator::Pow) |
                                 enums::Token::Op(enums::Operator::Mul) |
                                 enums::Token::Op(enums::Operator::Div) |
+                                enums::Token::Op(enums::Operator::Mod) |
                                 enums::Token::Op(enums::Operator::Add) |
                                 enums::Token::Op(enums::Operator::Sub) => out_queue.push(o2),
                                 _ => {

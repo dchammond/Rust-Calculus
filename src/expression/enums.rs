@@ -92,12 +92,12 @@ pub enum Constant {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[repr(u32)]
 pub enum Operator {
-    Add = 0,
-    Sub = 1,
-    Div = 2,
-    Mul = 3,
-    Pow = 4, // Right
-    Negate = 5, // Right
+    Add,
+    Sub,
+    Div,
+    Mod,
+    Mul,
+    Pow, // Right
+    Negate, // Right
 }
