@@ -18,8 +18,6 @@ fn string_to_expr(input: &String,
                   numeric_regex: &Regex,
                   function_regex: &Regex)
                   -> (String, Expression) {
-    // 1. Replace everthing except letters/numbers with their enums
-    // 2. Then go through and replace things with Literals or functions
     let mut variable: String = String::new();
     let mut expr: Expression = Expression::new(Vec::new());
     let mut builder: String = String::new();
