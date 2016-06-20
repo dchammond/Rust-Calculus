@@ -10,9 +10,10 @@ use std::collections::HashMap;
 
 mod expression;
 
-use expression::{parse_input, eval_postfix_expr};
-
 type Expression = expression::Expression;
+
+use expression::eval::eval_postfix_expr;
+use expression::parse::parse_input;
 
 fn strip_white_space(input: &String) -> String {
     input.split_whitespace().collect::<Vec<&str>>().join("")
