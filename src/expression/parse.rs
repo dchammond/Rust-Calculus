@@ -4,12 +4,12 @@ use regex::Regex;
 use expression;
 use expression::enums;
 
-pub type Expression = expression::Expression;
+type Expression = expression::Expression;
 
 pub fn parse_input(input: &String,
                    numeric_regex: &Regex,
                    function_regex: &Regex)
-                   -> (String, Result<Expression, String>) {
+                   -> (String, Result<expression::Expression, String>) {
     let (variable, expr) = string_to_expr(input, numeric_regex, function_regex);
     convert_to_postfix(input, variable, expr)
 }
