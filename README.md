@@ -1,6 +1,6 @@
 # Rust-Calculus
 
-[![Build Status](https://travis-ci.org/dchammond/rust_calculus.svg?branch=feature%2Ffunction)](https://travis-ci.org/dchammond/rust_calculus)
+[![Build Status](https://travis-ci.org/dchammond/rust_calculus.svg?branch=development)](https://travis-ci.org/dchammond/rust_calculus)
 
 Just messing around with evaluating mathematical expressions and performing integrals/derivatives.
 
